@@ -1,46 +1,64 @@
+using Microsoft.EntityFrameworkCore;
 using TeamHistory.WebApi.Data;
+using TeamHistory.WebApi.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.ConfigureSwaggerGen();
 builder.Services.AddDbContext<TeamHistoryContext>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.ConfigureSwaggerUI();
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+app.MapGet("/v1/teams", async (TeamHistoryContext context) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var teams = await context.Teams.ToListAsync();
+    return teams is null ? Results.NotFound() : Results.Ok(teams);
+}).Produces<IList<Team>>(StatusCodes.Status200OK).Produces(StatusCodes.Status404NotFound);
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/v1/teams/{id}", async (Guid id, TeamHistoryContext context) =>
 {
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-       new WeatherForecast
-       (
-           DateTime.Now.AddDays(index),
-           Random.Shared.Next(-20, 55),
-           summaries[Random.Shared.Next(summaries.Length)]
-       ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var teams = await context.Teams.FindAsync(id);
+    return teams is null ? Results.NotFound() : Results.Ok(teams);
+}).Produces<Team>(StatusCodes.Status200OK).Produces(StatusCodes.Status404NotFound);
+
+app.MapPost("/v1/teams/", async (Team model, TeamHistoryContext context) =>
+{
+    context.Teams.Add(model);
+    await context.SaveChangesAsync();
+    return Results.Created($"/todoitems/{model.Id}", model);
+}).Produces<Team>(StatusCodes.Status201Created).Produces(StatusCodes.Status400BadRequest);
+
+app.MapPut("/v1/teams/{id}", async (Guid id, Team model, TeamHistoryContext context) =>
+{
+    var teamRegistred = await context.Teams.FindAsync(id);
+
+    if (teamRegistred is null)
+        return Results.NotFound();
+
+    teamRegistred.Name = model.Name;
+    teamRegistred.FoundationDate = model.FoundationDate;
+
+    await context.SaveChangesAsync();
+
+    return Results.NoContent();
+}).Produces(StatusCodes.Status204NoContent).Produces(StatusCodes.Status400BadRequest);
+
+app.MapDelete("/v1/teams/{id}", async (Guid id, TeamHistoryContext context) =>
+{
+    var teamRegistred = await context.Teams.FindAsync(id);
+
+    if (teamRegistred is null)
+        return Results.NotFound();
+
+    context.Teams.Remove(teamRegistred);
+    await context.SaveChangesAsync();
+
+    return Results.NoContent();
+}).Produces(StatusCodes.Status204NoContent).Produces(StatusCodes.Status400BadRequest);
 
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
