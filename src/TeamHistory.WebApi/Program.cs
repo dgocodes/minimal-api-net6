@@ -1,11 +1,14 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using TeamHistory.WebApi.Data;
+using TeamHistory.WebApi.Dto;
 using TeamHistory.WebApi.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.ConfigureSwaggerGen();
 builder.Services.AddDbContext<TeamHistoryContext>();
+builder.Services.FluentValidationConfigure();
 
 var app = builder.Build();
 
@@ -25,22 +28,34 @@ app.MapGet("/v1/teams/{id}", async (Guid id, TeamHistoryContext context) =>
     return teams is null ? Results.NotFound() : Results.Ok(teams);
 }).Produces<Team>(StatusCodes.Status200OK).Produces(StatusCodes.Status404NotFound);
 
-app.MapPost("/v1/teams/", async (Team model, TeamHistoryContext context) =>
+app.MapPost("/v1/teams/", async (TeamCreateDto teamRequest, IValidator<TeamCreateDto> validator, TeamHistoryContext context) =>
 {
-    context.Teams.Add(model);
+    var validationResult = validator.Validate(teamRequest);
+
+    if (!validationResult.IsValid)    
+        return Results.ValidationProblem(validationResult.ToDictionary());
+
+    var team = new Team(teamRequest.Name, teamRequest.FoundationDate);
+
+    context.Teams.Add(team);
     await context.SaveChangesAsync();
-    return Results.Created($"/todoitems/{model.Id}", model);
+    return Results.Created($"/todoitems/{team.Id}", team);
 }).Produces<Team>(StatusCodes.Status201Created).Produces(StatusCodes.Status400BadRequest);
 
-app.MapPut("/v1/teams/{id}", async (Guid id, Team model, TeamHistoryContext context) =>
+app.MapPut("/v1/teams/{id}", async (Guid id, TeamCreateDto teamRequest, IValidator<TeamCreateDto> validator, TeamHistoryContext context) =>
 {
+    var validationResult = validator.Validate(teamRequest);
+
+    if (!validationResult.IsValid)
+        return Results.ValidationProblem(validationResult.ToDictionary());
+
     var teamRegistred = await context.Teams.FindAsync(id);
 
     if (teamRegistred is null)
         return Results.NotFound();
 
-    teamRegistred.Name = model.Name;
-    teamRegistred.FoundationDate = model.FoundationDate;
+    teamRegistred.SetName(teamRequest.Name);
+    teamRegistred.SetFoundationDate(teamRequest.FoundationDate);
 
     await context.SaveChangesAsync();
 

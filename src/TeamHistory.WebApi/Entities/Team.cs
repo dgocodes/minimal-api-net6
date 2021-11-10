@@ -9,10 +9,13 @@
             FoundationDate = foundationDate;
         }
 
+        public void SetName(string name) => Name = name;
+        public void SetFoundationDate(DateTime foundationDate) => FoundationDate = foundationDate;
+
         public Guid Id { get; private set; }
 
-        public string Name { get; set; }
+        public string Name { get; private set; }
 
-        public DateTime FoundationDate { get; set; }
+        public DateTime FoundationDate { get; private set; }
     }
 }
