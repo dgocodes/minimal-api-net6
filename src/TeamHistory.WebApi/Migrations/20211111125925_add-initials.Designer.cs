@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TeamHistory.WebApi.Data;
 
@@ -10,9 +11,10 @@ using TeamHistory.WebApi.Data;
 namespace TeamHistory.WebApi.Migrations
 {
     [DbContext(typeof(TeamHistoryContext))]
-    partial class TeamHistoryContextModelSnapshot : ModelSnapshot
+    [Migration("20211111125925_add-initials")]
+    partial class addinitials
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.0");

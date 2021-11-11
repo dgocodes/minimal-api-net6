@@ -2,10 +2,11 @@
 {
     public class Team
     {
-        public Team(string name, DateTime foundationDate)
+        public Team(string name, string initials, DateTime foundationDate)
         {
             Id = Guid.NewGuid();
             Name = name;
+            Initials = initials;
             FoundationDate = foundationDate;
         }
 
@@ -14,7 +15,9 @@
 
         public Guid Id { get; private set; }
 
-        public string Name { get; private set; }
+        public string Name { get; private set; }    
+
+        public string Initials { get; set; }
 
         public DateTime FoundationDate { get; private set; }
     }

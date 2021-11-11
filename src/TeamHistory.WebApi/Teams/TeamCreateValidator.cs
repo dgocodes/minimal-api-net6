@@ -10,13 +10,15 @@ public class Validator : AbstractValidator<TeamCreateDto>
             .MinimumLength(3)
             .WithMessage("Name has min length of 3 characters");
 
+        RuleFor(x => x.Initials)
+            .NotNull()
+            .WithMessage("Initials is required");
 
         RuleFor(x => x.FoundationDate)
             .NotNull()
             .WithMessage("FoundationDate is required")
-            .GreaterThanOrEqualTo(x => DateTime.Now)
-            .WithMessage($"Foundation date must be greater than or equal to {DateTime.Now.ToShortDateString()}");
-
+            .LessThanOrEqualTo(DateTime.Now)
+            .WithMessage($"Foundation date must be less than or equal to {DateTime.Now.ToShortDateString()}");
     }
 }
 
